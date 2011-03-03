@@ -16,6 +16,8 @@ RSpec.configure do |config|
       Snowfinch::Collector.db.collections.each do |collection|
         collection.drop unless collection.name.match(/^system\./)
       end
+
+      Snowfinch::Collector.db["sites"].insert({ "tz" => "Europe/Helsinki" })
     end
   end
 

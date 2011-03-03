@@ -2,139 +2,110 @@ require "spec_helper"
 
 feature "Data collection" do
 
+  let :sites do
+    Snowfinch::Collector.db["sites"].find.to_a
+  end
+  
+  let :site_counts do
+    Snowfinch::Collector.db["site_counts"].find.to_a
+  end
+
+  let :page_counts do
+    Snowfinch::Collector.db["page_counts"].find({}, :sort => "_id").to_a
+  end
+
   background do
     @time = Time.utc(2011, 11, 11, 11, 11)
     Timecop.freeze(@time)
   end
 
-  let :page_counts do
-    Snowfinch::Collector.db["page_counts"]
-  end
+  scenario "Multiple pageviews at different times" do
+    freeze_utc_time(2011, 2, 12, 7)
+    get path(:token => token, :uri => "http://snowfinch.net/posts")
 
-  let :site_counts do
-    Snowfinch::Collector.db["site_counts"]
-  end
+    freeze_utc_time(2011, 6, 4, 10)
+    get path(:token => token, :uri => "http://snowfinch.net/archive")
 
-  let :page_referrers do
-    Snowfinch::Collector.db["page_referrers"]
-  end
+    freeze_utc_time(2011, 6, 4, 15)
+    get path(:token => token, :uri => "http://snowfinch.net/")
 
-  let :site_referrers do
-    Snowfinch::Collector.db["site_referrers"]
-  end
+    freeze_utc_time(2011, 6, 4, 15)
+    get path(:token => token, :uri => "http://snowfinch.net/posts")
 
-  let :visits do
-    Snowfinch::Collector.db["visits"]
-  end
+    freeze_utc_time(2011, 6, 4, 15)
+    get path(:token => token, :uri => "http://snowfinch.net/posts")
 
-  let :hour do
-    Time.utc(2011, 11, 11, 11, 0)
-  end
+    freeze_utc_time(2012, 1, 1, 4)
+    get path(:token => token, :uri => "http://snowfinch.net/")
 
-  scenario "A user comes directly to the site" do
-    get path(:token => "X3", :uri => "http://rails.fi/", :visitorId => "CAFE",
-             :visitorName => "Jenny")
+    site_counts.count.should == 2
+    page_counts.count.should == 4
 
-    page_counts.count.should == 1
-    page_counts.last["hour"].should == hour
-    page_counts.last["pageviews"].should == 1
-    page_counts.last["site"].should == "X3"
-    page_counts.last["uri"].should == "http://rails.fi/"
+    site_counts[0]["s"].should == BSON::ObjectId(token)
+    site_counts[0]["y"].should == 2011
+    site_counts[0]["c"].should == 5
+    site_counts[0]["2"]["c"].should == 1
+    site_counts[0]["2"]["12"]["c"].should == 1
+    site_counts[0]["2"]["12"]["9"]["c"].should == 1
+    site_counts[0]["6"]["c"].should == 4
+    site_counts[0]["6"]["4"]["c"].should == 4
+    site_counts[0]["6"]["4"]["13"]["c"].should == 1
+    site_counts[0]["6"]["4"]["18"]["c"].should == 3
 
-    site_counts.count.should == 1
-    site_counts.last["hour"].should == hour
-    site_counts.last["pageviews"].should == 1
-    site_counts.last["site"].should == "X3"
-    site_counts.last["visits"].should == 1
+    site_counts[1]["s"].should == BSON::ObjectId(token)
+    site_counts[1]["y"].should == 2012
+    site_counts[1]["c"].should == 1
+    site_counts[1]["1"]["c"].should == 1
+    site_counts[1]["1"]["1"]["c"].should == 1
+    site_counts[1]["1"]["1"]["6"]["c"].should == 1
 
-    page_referrers.count.should == 1
-    page_referrers.last["count"].should == 1
-    page_referrers.last["host"].should == nil
-    page_referrers.last["hour"].should == hour
-    page_referrers.last["uri"].should == "http://rails.fi/"
-    page_referrers.last["site"].should == "X3"
+    page_counts[0]["s"].should == BSON::ObjectId(token)
+    page_counts[0]["u"].should == "http://snowfinch.net/posts"
+    page_counts[0]["y"].should == 2011
+    page_counts[0]["c"].should == 3
+    page_counts[0]["2"]["c"].should == 1
+    page_counts[0]["2"]["12"]["c"].should == 1
+    page_counts[0]["2"]["12"]["9"]["c"].should == 1
+    page_counts[0]["6"]["c"].should == 2
+    page_counts[0]["6"]["4"]["c"].should == 2
+    page_counts[0]["6"]["4"]["18"]["c"].should == 2
 
-    site_referrers.count.should == 1
-    site_referrers.last["host"].should == nil
-    site_referrers.last["hour"].should == hour
-    site_referrers.last["site"].should == "X3"
-    site_referrers.last["count"].should == 1
+    page_counts[1]["s"].should == BSON::ObjectId(token)
+    page_counts[1]["u"].should == "http://snowfinch.net/archive"
+    page_counts[1]["y"].should == 2011
+    page_counts[1]["c"].should == 1
+    page_counts[1]["6"]["c"].should == 1
+    page_counts[1]["6"]["4"]["c"].should == 1
+    page_counts[1]["6"]["4"]
+    page_counts[1]["6"]["4"]["13"]["c"].should == 1
 
-    visits.count.should == 1
-    visits.last["visitor"]["id"].should == "CAFE"
-    visits.last["visitor"]["name"].should == "Jenny"
-    visits.last["site"].should == "X3"
-    visits.last["pages"].should == ["http://rails.fi/"]
-    visits.last["heartbeats"]["first"].should == @time
-    visits.last["heartbeats"]["last"].should == @time
-  end
+    page_counts[2]["s"].should == BSON::ObjectId(token)
+    page_counts[2]["u"].should == "http://snowfinch.net/"
+    page_counts[2]["y"].should == 2011
+    page_counts[2]["c"].should == 1
+    page_counts[2]["6"]["c"].should == 1
+    page_counts[2]["6"]["4"]["c"].should == 1
+    page_counts[2]["6"]["4"]["18"]["c"].should == 1
 
-  scenario "A user visits a second page on the site" do
-    get path(:token => "X3", :uri => "http://rails.fi/", :visitorId => "CAFE",
-             :visitorName => "Jenny")
-
-    new_time = @time + 25
-    Timecop.freeze(new_time)
-
-    get path(:token => "X3", :uri => "http://rails.fi/posts",
-             :referrer => "http://rails.fi/", :visitorId => "CAFE",
-             :visitorName => "Jenny")
-
-    page_counts.count.should == 2
-    page_counts.last["pageviews"].should == 1
-    page_counts.last["uri"].should == "http://rails.fi/posts"
-
-    site_counts.count.should == 1
-    site_counts.last["pageviews"].should == 2
-    site_counts.last["visits"].should == 1
-
-    page_referrers.count.should == 2
-    page_referrers.last["count"].should == 1
-    page_referrers.last["host"].should == "rails.fi"
-    page_referrers.last["uri"].should == "http://rails.fi/posts"
-
-    site_referrers.count.should == 2
-    site_referrers.last["host"].should == "rails.fi"
-    site_referrers.last["count"].should == 1
-
-    visits.count.should == 1
-    visits.last["pages"].should == ["http://rails.fi/", "http://rails.fi/posts"]
-    visits.last["heartbeats"]["first"].should == @time
-    visits.last["heartbeats"]["last"].should == new_time
-  end
-
-  scenario "Two users visit the same site" do
-    get path(:token => "X3", :uri => "http://rails.fi/", :visitorId => "A1")
-    get path(:token => "X3", :uri => "http://rails.fi/", :visitorId => "B2")
-    
-    page_counts.count.should == 1
-    page_counts.last["pageviews"].should == 2
-
-    site_counts.count.should == 1
-    site_counts.last["pageviews"].should == 2
-    site_counts.last["visits"].should == 2
-
-    visits.count.should == 2
+    page_counts[3]["s"].should == BSON::ObjectId(token)
+    page_counts[3]["u"].should == "http://snowfinch.net/"
+    page_counts[3]["y"].should == 2012
+    page_counts[3]["c"].should == 1
+    page_counts[3]["1"]["c"].should == 1
+    page_counts[3]["1"]["1"]["c"].should == 1
+    page_counts[3]["1"]["1"]["6"]["c"].should == 1
   end
 
   scenario "URI with HTTPS" do
-    get path(:token => "X3", :uri => "https://rails.fi/posts",
-             :visitorId => "A1")
+    get path(:token => token, :uri => "https://snowfinch.net/posts")
 
-    page_counts.last["uri"].should == "http://rails.fi/posts"
-    page_referrers.last["uri"].should == "http://rails.fi/posts"
-    visits.last["pages"].should == ["http://rails.fi/posts"]
+    page_counts.last["u"].should == "http://snowfinch.net/posts"
   end
 
   scenario "URIs with www" do
-    get path(:token => "X3", :uri => "http://www.rails.fi/posts",
-             :visitorId => "A1", :referrer => "http://www.rails.fi/")
+    get path(:token => token, :uri => "http://www.snowfinch.net/archive")
 
-    page_counts.last["uri"].should == "http://rails.fi/posts"
-    page_referrers.last["host"].should == "rails.fi"
-    page_referrers.last["uri"].should == "http://rails.fi/posts"
-    site_referrers.last["host"].should == "rails.fi"
-    visits.last["pages"].should == ["http://rails.fi/posts"]
+    page_counts.last["u"].should == "http://snowfinch.net/archive"
   end
 
 end

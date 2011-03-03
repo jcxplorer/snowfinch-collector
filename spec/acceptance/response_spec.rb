@@ -3,7 +3,7 @@ require "spec_helper"
 feature "Response" do
 
   scenario "GET request" do
-    get path(:site => "X3", :uri => "http://rails.fi/", :visitorId => "CAFE")
+    get path(:token => token, :uri => "http://rails.fi/", :visitorId => "CAFE")
     
     empty_gif = "R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
 
