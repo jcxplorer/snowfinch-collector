@@ -67,6 +67,12 @@ module Snowfinch
           { :upsert => true }
         )
 
+        db["visitors"].update(
+          { "s" => site_id, "u" => uuid, "d" => time.to_date.to_s },
+          { :$inc => { "c" => 1 } },
+          { :upsert => 1 }
+        )
+
         [200, HEADERS, RESPONSE]
       else
         [403, {}, []]

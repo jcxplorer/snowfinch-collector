@@ -18,6 +18,10 @@ feature "Data collection" do
     Snowfinch::Collector.db["visits"].find({}, :sort => "_id").to_a
   end
 
+  let :visitors do
+    Snowfinch::Collector.db["visitors"].find({}, :sort => "_id").to_a
+  end
+
   background do
     @time = Time.utc(2011, 11, 11, 11, 11)
     Timecop.freeze(@time)
@@ -152,6 +156,37 @@ feature "Data collection" do
     visits[4]["v"].should == "A"
     visits[4]["h"].should == Time.utc(2011, 1, 1, 11, 5).to_i
     visits[4]["c"].should == 2
+  end
+
+  scenario "Multiple visitors" do
+    homepage = "http://snowfinch.net/"
+
+    freeze_utc_time(2011, 1, 1, 23, 0)
+    get path(:token => token, :uuid => "A", :uri => homepage)
+
+    freeze_utc_time(2011, 1, 2)
+    get path(:token => token, :uuid => "A", :uri => homepage)
+
+    freeze_utc_time(2011, 1, 2)
+    get path(:token => token, :uuid => "B", :uri => homepage)
+
+    freeze_utc_time(2011, 1, 3)
+    get path(:token => token, :uuid => "A", :uri => homepage)
+
+    visitors.count.should == 3
+    visitors
+
+    visitors[0]["d"].should == "2011-01-02"
+    visitors[0]["u"].should == "A"
+    visitors[0]["c"].should == 2
+
+    visitors[1]["d"].should == "2011-01-02"
+    visitors[1]["u"].should == "B"
+    visitors[1]["c"].should == 1
+
+    visitors[2]["d"].should == "2011-01-03"
+    visitors[2]["u"].should == "A"
+    visitors[2]["c"].should == 1
   end
 
 end
