@@ -63,4 +63,14 @@ describe Snowfinch::Collector do
     end
   end
 
+  describe ".hash_uri" do
+    it "returns a SHA1 hash of the URI in base 62" do
+      uri = "http://snowfinch.net/about"
+      Snowfinch::Collector.hash_uri(uri).should == "jjvMHRNTpBvTWe5Nm0YIjHufcdA"
+
+      uri = "http://snowfinch.net/"
+      Snowfinch::Collector.hash_uri(uri).should == "acrfzPFTC4qJH0SLjgo4611dj2h"
+    end
+  end
+
 end

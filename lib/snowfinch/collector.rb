@@ -4,6 +4,8 @@ require "rack"
 require "rack/request"
 require "uri"
 require "tzinfo"
+require "digest/sha1"
+require "radix62"
 
 module Snowfinch
   module Collector
@@ -75,6 +77,10 @@ module Snowfinch
       uri.query = nil
       uri.fragment = nil
       uri = uri.to_s
+    end
+
+    def self.hash_uri(uri)
+      Digest::SHA1.hexdigest(uri).to_i(16).encode62
     end
 
   end

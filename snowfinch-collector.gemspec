@@ -22,5 +22,6 @@ Gem::Specification.new do |s|
   s.add_dependency "bson_ext"
   s.add_dependency "mongo"
   s.add_dependency "rack"
+  s.add_dependency "radix62"
   s.add_dependency "tzinfo"
 end
