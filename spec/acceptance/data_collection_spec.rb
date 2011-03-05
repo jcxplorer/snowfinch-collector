@@ -96,16 +96,4 @@ feature "Data collection" do
     page_counts[3]["1"]["1"]["6"]["c"].should == 1
   end
 
-  scenario "URI with HTTPS" do
-    get path(:token => token, :uri => "https://snowfinch.net/posts")
-
-    page_counts.last["u"].should == "http://snowfinch.net/posts"
-  end
-
-  scenario "URIs with www" do
-    get path(:token => token, :uri => "http://www.snowfinch.net/archive")
-
-    page_counts.last["u"].should == "http://snowfinch.net/archive"
-  end
-
 end

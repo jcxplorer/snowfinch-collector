@@ -31,4 +31,36 @@ describe Snowfinch::Collector do
     end
   end
 
+  describe ".sanitize_uri" do
+    it "turns https into http" do
+      original_uri = "https://snowfinch.net/posts"
+      expected_uri = "http://snowfinch.net/posts"
+      Snowfinch::Collector.sanitize_uri(original_uri).should == expected_uri
+    end
+
+    it "removes www." do
+      original_uri = "http://www.snowfinch.net/archive"
+      expected_uri = "http://snowfinch.net/archive"
+      Snowfinch::Collector.sanitize_uri(original_uri).should == expected_uri
+    end
+
+    it "removes a slash at the end of the path" do
+      original_uri = "http://snowfinch.net/archive/"
+      expected_uri = "http://snowfinch.net/archive"
+      Snowfinch::Collector.sanitize_uri(original_uri).should == expected_uri
+    end
+
+    it "removes the query part" do
+      original_uri = "http://snowfinch.net/?source=google"
+      expected_uri = "http://snowfinch.net/"
+      Snowfinch::Collector.sanitize_uri(original_uri).should == expected_uri
+    end
+
+    it "removes the fragment part" do
+      original_uri = "http://snowfinch.net/about#contact"
+      expected_uri = "http://snowfinch.net/about"
+      Snowfinch::Collector.sanitize_uri(original_uri).should == expected_uri
+    end
+  end
+
 end

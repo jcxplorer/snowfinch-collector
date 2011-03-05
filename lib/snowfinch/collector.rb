@@ -19,7 +19,8 @@ module Snowfinch
       site = db["sites"].find_one(site_id)
 
       if site
-        uri = params["uri"].sub(/^https?:\/\/(www\.)?/, "http://")
+        uri = sanitize_uri(params["uri"])
+
         visitor_name = params["visitor_name"]
         visitor_id = params["visitorId"]
 
@@ -65,6 +66,15 @@ module Snowfinch
 
     def self.db=(database)
       @db = database
+    end
+
+    def self.sanitize_uri(uri)
+      uri = uri.sub(/^https?:\/\/(www\.)?/, "http://")
+      uri = URI.parse(uri)
+      uri.path = uri.path.sub(/(.)\/$/, '\1')
+      uri.query = nil
+      uri.fragment = nil
+      uri = uri.to_s
     end
 
   end
