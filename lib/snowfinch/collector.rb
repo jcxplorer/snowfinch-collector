@@ -19,6 +19,10 @@ module Snowfinch
       params  = Rack::Request.new(env).params
       site_id = BSON::ObjectId(params["token"])
 
+      if !params["uri"] || !params["uuid"]
+        return bad_request
+      end
+
       if site = db["sites"].find_one(site_id)
         uri  = sanitize_uri(params["uri"])
         uuid = params["uuid"]
@@ -75,10 +79,10 @@ module Snowfinch
 
         [200, HEADERS, RESPONSE]
       else
-        [403, {}, []]
+        bad_request
       end
     rescue
-      [400, {}, []]
+      bad_request
     end
 
     def self.db
@@ -102,5 +106,10 @@ module Snowfinch
       Digest::SHA1.hexdigest(uri).to_i(16).encode62
     end
 
+    private
+
+    def self.bad_request
+      @bad_request ||= [400, {}, []]
+    end
   end
 end
