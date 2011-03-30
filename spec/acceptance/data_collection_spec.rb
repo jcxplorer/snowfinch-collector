@@ -2,6 +2,8 @@ require "spec_helper"
 
 feature "Data collection" do
 
+  let(:homepage) { "http://snowfinch.net/" }
+
   let :sites do
     Snowfinch::Collector.db["sites"].find.to_a
   end
@@ -14,17 +16,16 @@ feature "Data collection" do
     Snowfinch::Collector.db["page_counts"].find({}, :sort => "_id").to_a
   end
 
+  let :sensor_counts do
+    Snowfinch::Collector.db["sensor_counts"].find({}, :sort => "_id").to_a
+  end
+
   let :visits do
     Snowfinch::Collector.db["visits"].find({}, :sort => "_id").to_a
   end
 
   let :visitors do
     Snowfinch::Collector.db["visitors"].find({}, :sort => "_id").to_a
-  end
-
-  background do
-    @time = Time.utc(2011, 11, 11, 11, 11)
-    Timecop.freeze(@time)
   end
 
   scenario "Multiple pageviews at different times" do
@@ -103,7 +104,6 @@ feature "Data collection" do
   end
 
   scenario "Multiple visits" do
-    homepage = "http://snowfinch.net/"
     archive  = "http://snowfinch.net/archive"
 
     freeze_utc_time(2011, 1, 1, 10, 0)
@@ -159,8 +159,6 @@ feature "Data collection" do
   end
 
   scenario "Multiple visitors" do
-    homepage = "http://snowfinch.net/"
-
     freeze_utc_time(2011, 1, 1, 23, 0)
     get path(:token => token, :uuid => "A", :uri => homepage)
 
@@ -187,6 +185,116 @@ feature "Data collection" do
     visitors[2]["d"].should == "2011-01-03"
     visitors[2]["u"].should == "A"
     visitors[2]["c"].should == 1
+  end
+
+  scenario "Entries matching a query based sensor" do
+    campaign_uri     = "http://snowfinch.net/?campaign=rr"
+    both_sensors_uri = "http://snowfinch.net/?campaign=rr&from=email"
+
+    campaign_sensor = {
+      "id" => 12,
+      "type" => "query",
+      "key" => "campaign",
+      "value" => "rr"
+    }
+
+    email_sensor = {
+      "id" => 24,
+      "type" => "query",
+      "key" => "from",
+      "value" => "email"
+    }
+
+    Snowfinch::Collector.db["sites"].update(
+      { "_id" => BSON::ObjectId(token) },
+      { :$set => { "sensors" => [campaign_sensor, email_sensor] } }
+    )
+
+    freeze_utc_time(2011, 11, 11, 20)
+    get path(:token => token, :uri => campaign_uri)
+
+    freeze_utc_time(2011, 11, 11, 20)
+    get path(:token => token, :uri => campaign_uri)
+    
+    freeze_utc_time(2011, 11, 11, 21)
+    get path(:token => token, :uri => both_sensors_uri)
+
+    freeze_utc_time(2011, 11, 11, 21)
+    get path(:token => token, :uri => homepage)
+
+    sensor_counts.count.should == 2
+
+    sensor_counts[0]["s"].should == BSON::ObjectId(token)
+    sensor_counts[0]["id"].should == 12
+    sensor_counts[0]["y"].should == 2011
+    sensor_counts[0]["c"].should == 3
+    sensor_counts[0]["11"]["c"].should == 3
+    sensor_counts[0]["11"]["11"]["c"].should == 3
+    sensor_counts[0]["11"]["11"]["22"]["c"].should == 2
+    sensor_counts[0]["11"]["11"]["23"]["c"].should == 1
+
+    sensor_counts[1]["s"].should == BSON::ObjectId(token)
+    sensor_counts[1]["id"].should == 24
+    sensor_counts[1]["y"].should == 2011
+    sensor_counts[1]["c"].should == 1
+    sensor_counts[1]["11"]["c"].should == 1
+    sensor_counts[1]["11"]["11"]["c"].should == 1
+    sensor_counts[1]["11"]["11"]["23"]["c"].should == 1
+  end
+
+  scenario "Entries matching a host based sensor" do
+    facebook_referrer = "http://www.facebook.com/l.php"
+    twitter_referrer = "http://twitter.com/jcxplorer"
+    search_referrer = "http://duckduckgo.com/post.html"
+
+    social_sensor = {
+      "id" => 33,
+      "type" => "host",
+      "hosts" => ["facebook.com", "twitter.com"]
+    }
+
+    facebook_sensor = {
+      "id" => 46,
+      "type" => "host",
+      "hosts" => ["facebook.com"]
+    }
+
+    Snowfinch::Collector.db["sites"].update(
+      { "_id" => BSON::ObjectId(token) },
+      { :$set => { "sensors" => [social_sensor, facebook_sensor] } }
+    )
+
+    freeze_utc_time(2011, 8, 2, 5)
+    get path(:token => token, :uri => homepage, :referrer => twitter_referrer)
+
+    freeze_utc_time(2011, 8, 2, 5)
+    get path(:token => token, :uri => homepage, :referrer => search_referrer)
+
+    freeze_utc_time(2011, 8, 10, 12)
+    get path(:token => token, :uri => homepage, :referrer => facebook_referrer)
+
+    freeze_utc_time(2011, 8, 10, 12)
+    get path(:token => token, :uri => homepage, :referrer => twitter_referrer)
+
+    sensor_counts.count.should == 2
+
+    sensor_counts[0]["s"].should == BSON::ObjectId(token)
+    sensor_counts[0]["id"].should == 33
+    sensor_counts[0]["y"].should == 2011
+    sensor_counts[0]["c"].should == 3
+    sensor_counts[0]["8"]["c"].should == 3
+    sensor_counts[0]["8"]["2"]["c"].should == 1
+    sensor_counts[0]["8"]["2"]["8"]["c"].should == 1
+    sensor_counts[0]["8"]["10"]["c"].should == 2
+    sensor_counts[0]["8"]["10"]["15"]["c"].should == 2
+
+    sensor_counts[1]["s"].should == BSON::ObjectId(token)
+    sensor_counts[1]["id"].should == 46
+    sensor_counts[1]["y"].should == 2011
+    sensor_counts[1]["c"].should == 1
+    sensor_counts[1]["8"]["c"].should == 1
+    sensor_counts[1]["8"]["10"]["c"].should == 1
+    sensor_counts[1]["8"]["10"]["15"]["c"].should == 1
   end
 
 end
