@@ -123,7 +123,7 @@ module Snowfinch
 
       def update_page_count
         Snowfinch::Collector.db["page_counts"].update(
-          { "s" => site_id, "u" => uri, "y" => time.year },
+          { "s" => site_id, "u" => uri, "y" => time.year, "h" => uri_hash },
           { :$inc => hourly_increment },
           { :upsert => true }
         )

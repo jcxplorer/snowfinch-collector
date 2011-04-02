@@ -71,6 +71,7 @@ feature "Data collection" do
     site_counts[1]["1"]["1"]["6"]["c"].should == 1
 
     page_counts[0]["u"].should == "http://snowfinch.net/posts"
+    page_counts[0]["h"].should == "rmT7mgGiXq6Hw8d6oApVW1AohTW"
     page_counts[0]["y"].should == 2011
     page_counts[0]["c"].should == 3
     page_counts[0]["2"]["c"].should == 1
@@ -81,6 +82,7 @@ feature "Data collection" do
     page_counts[0]["6"]["4"]["18"]["c"].should == 2
 
     page_counts[1]["u"].should == "http://snowfinch.net/archive"
+    page_counts[1]["h"].should == "61EDJAzzvZOSNlIsLEaD3GRau2K"
     page_counts[1]["y"].should == 2011
     page_counts[1]["c"].should == 1
     page_counts[1]["6"]["c"].should == 1
@@ -89,6 +91,7 @@ feature "Data collection" do
     page_counts[1]["6"]["4"]["13"]["c"].should == 1
 
     page_counts[2]["u"].should == "http://snowfinch.net/"
+    page_counts[2]["h"].should == "acrfzPFTC4qJH0SLjgo4611dj2h"
     page_counts[2]["y"].should == 2011
     page_counts[2]["c"].should == 1
     page_counts[2]["6"]["c"].should == 1
@@ -96,6 +99,7 @@ feature "Data collection" do
     page_counts[2]["6"]["4"]["18"]["c"].should == 1
 
     page_counts[3]["u"].should == "http://snowfinch.net/"
+    page_counts[3]["h"].should == "acrfzPFTC4qJH0SLjgo4611dj2h"
     page_counts[3]["y"].should == 2012
     page_counts[3]["c"].should == 1
     page_counts[3]["1"]["c"].should == 1
