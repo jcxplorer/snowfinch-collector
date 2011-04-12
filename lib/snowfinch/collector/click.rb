@@ -69,7 +69,7 @@ module Snowfinch
       def matching_query_sensors
         query_string = URI.parse(@attributes[:uri]).query
 
-        if query_string
+        if query_string && sensors
           query_parts = CGI.parse(query_string)
 
           matches = sensors.find_all do |sensor|
@@ -87,7 +87,7 @@ module Snowfinch
       end
 
       def matching_host_sensors
-        if referrer && !referrer.empty?
+        if referrer && !referrer.empty? && sensors
           referrer_host = URI.parse(referrer).host
 
           matches = sensors.find_all do |sensor|
