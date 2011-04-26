@@ -91,7 +91,7 @@ module Snowfinch
           referrer_host = URI.parse(referrer).host
 
           matches = sensors.find_all do |sensor|
-            if sensor["type"] == "host"
+            if sensor["type"] == "referrer"
               sensor["hosts"].any? do |sensor_host|
                 referrer_host =~ /^(\S+\.)?#{sensor_host}$/
               end

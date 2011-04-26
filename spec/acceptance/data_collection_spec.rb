@@ -246,20 +246,20 @@ feature "Data collection" do
     sensor_counts[1]["11"]["11"]["23"]["c"].should == 1
   end
 
-  scenario "Entries matching a host based sensor" do
+  scenario "Entries matching a referrer based sensor" do
     facebook_referrer = "http://www.facebook.com/l.php"
     twitter_referrer = "http://twitter.com/jcxplorer"
     search_referrer = "http://duckduckgo.com/post.html"
 
     social_sensor = {
       "id" => 33,
-      "type" => "host",
+      "type" => "referrer",
       "hosts" => ["facebook.com", "twitter.com"]
     }
 
     facebook_sensor = {
       "id" => 46,
-      "type" => "host",
+      "type" => "referrer",
       "hosts" => ["facebook.com"]
     }
 
