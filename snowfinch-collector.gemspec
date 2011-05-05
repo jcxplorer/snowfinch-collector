@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Joao Carlos"]
   s.email       = ["mail@joao-carlos.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/jcxplorer/snowfinch"
   s.summary     = %q{Snowfinch collector}
   s.description = %q{Collector gem for snowfinch.}
 
