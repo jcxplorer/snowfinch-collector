@@ -30,8 +30,8 @@ module Snowfinch
       else
         BAD_REQUEST
       end
-    #rescue
-      #BAD_REQUEST
+    rescue
+      BAD_REQUEST
     end
 
     def self.db
